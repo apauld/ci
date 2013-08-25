@@ -1,0 +1,14 @@
+package com.infonow.domino
+
+class Customer {
+
+    static constraints = {
+    }
+	
+	static mapping = {
+		table 'configuration'
+		version false
+		id column: 'person_id'
+		firstName column: 'First_Name'
+	}
+}

@@ -1,0 +1,8 @@
+package com.infonow.domino
+
+class Address {
+	
+
+    static constraints = {
+    }
+}

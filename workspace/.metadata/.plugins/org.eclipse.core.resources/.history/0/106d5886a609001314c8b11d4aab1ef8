@@ -1,0 +1,55 @@
+package com.infonow.domino
+
+import java.sql.Blob;
+
+class DataFile {
+	
+	Date loadDate
+	Long customerSid
+	Long reportingPartnerSid
+	Date reportingDate
+	Long partnerTypeSid
+	Date createDate
+	Date updateDate
+	Boolean deleted
+	Long id
+	String fileName
+	String fileType
+	String dataType
+	String controlSum
+	String encoding
+	
+
+    static constraints = {
+    }
+	
+	static mapping = {
+		table 'configuration'
+		version false
+		id column: 'sid'
+		firstName column: 'load_date'
+		firstName column: 'customer_sid'
+		firstName column: 'reporting_partner_sid'
+		firstName column: 'reporting_date'
+		firstName column: 'partner_type_sid'
+		firstName column: 'create_date'
+		firstName column: 'update_date'
+		firstName column: 'deleted'
+		firstName column: 'id'
+		firstName column: 'file_name'
+		firstName column: 'file_type'
+		firstName column: 'data_type'
+		firstName column: 'control_sum'
+		firstName column: 'encoding'
+		firstName column: 'file_content'
+		firstName column: 'service_user_sid'
+		firstName column: 'parseable'
+		firstName column: 'parsed'
+		firstName column: 'parent_sid'
+		firstName column: 'file_size'
+		firstName column: 'record_count'
+		firstName column: 'processing_complete'
+		firstName column: 'end_state_validations_complete'
+		firstName column: 'load_date'
+	}
+}

@@ -1,0 +1,32 @@
+package com.infonow.domino
+
+class Configuration {
+	Long serviceSid
+	Long customerSid
+	Long reportingPartnerSid
+	String serviceName
+	String name
+	String configurationType
+	String xmlData
+	Date createDate
+	Date updateDate
+	
+
+    static constraints = {
+    }
+	
+	static mapping = {
+		table 'configuration'
+		version false
+		id column: 'sid'
+		firstName column: 'service_sid'
+		firstName column: 'customer_sid'
+		firstName column: 'reporting_partner_sid'
+		firstName column: 'service_name'
+		firstName column: 'name'
+		firstName column: 'configuration_type'
+		firstName column: 'xml_data'
+		firstName column: 'create_date'
+		firstName column: 'update_date'
+	}
+}

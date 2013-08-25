@@ -1,0 +1,21 @@
+package com.infonow.domino
+
+class Field {
+	
+	/*
+          <field name="clientSKU" required="true" location="2">
+             <type name="string">
+                <minLength>1</minLength>
+                <maxLength>100</maxLength>
+             </type>
+          </field>
+	 */
+	
+	String name
+	Boolean required
+	Integer location
+	String type
+
+    static constraints = {
+    }
+}

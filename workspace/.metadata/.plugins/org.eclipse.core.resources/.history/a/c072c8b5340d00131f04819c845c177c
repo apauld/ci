@@ -1,0 +1,214 @@
+package com.infonow.domino
+
+import org.springframework.dao.DataIntegrityViolationException
+//import java.nio.channels.Channels
+//import java.nio.channels.ReadableByteChannel
+//import java.nio.channels.WritableByteChannel
+
+
+
+class DataFileController {
+
+    static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
+	
+	def excelService
+	
+	def search() {
+
+		if(params.id){
+			def dataFileInstance = DataFile.get(params.id)
+			if(!dataFileInstance){
+				flash.message = "DataFile with id: ${params.id} not found."
+			}
+			else{
+				Configuration currentConfiguration = Configuration.find("from Configuration c where c.serviceName = 'parserService' and c.customerSid = :customerSid and c.reportingPartnerSid = :reportingPartnerSid and c.name = :name and c.configurationType = :fileType",[customerSid:dataFileInstance.customerSid,reportingPartnerSid:dataFileInstance.reportingPartnerSid,name:dataFileInstance.dataType, fileType:dataFileInstance.fileType])
+				ReportingPartner basePartner = ReportingPartner.findByIdOriginal("BASE")
+				Configuration baseConfiguration = Configuration.find("from Configuration c where c.serviceName = 'parserService' and c.customerSid = :customerSid and c.reportingPartnerSid = :reportingPartnerSid and c.name = :name",[customerSid:dataFileInstance.customerSid,reportingPartnerSid:basePartner.id,name:dataFileInstance.dataType])
+
+				if(!currentConfiguration){
+					flash.message = "Unable to locate configuration for ${dataFileInstance.customerSid}, ${dataFileInstance.reportingPartnerSid}, ${dataFileInstance.dataType},${dataFileInstance.fileType}"
+				}
+				else{				
+					def parseFields = [:]
+					def baseFields = [:]
+					def fileData = [:]
+					parseFields = getFieldsMap(currentConfiguration.xmlData)
+					if(baseConfiguration){
+						baseFields = getFieldsMap(currentConfiguration.xmlData)
+					}
+					fileData = getFileDataMap(dataFileInstance,2)
+					[parseFields:parseFields,baseFields:baseFields,fileDataHeader:fileData.header,fileDataRow:fileData.row]
+				}
+			}
+		}
+	}
+	
+	def getFileDataMap(DataFile dataFile, int rowNum){
+		def dataFileMap = null
+		def rowMap = [:]
+		String input
+		
+		if(dataFile.fileType == 'csv'){
+			input = dataFile.fileContent.getBytes(0,dataFile.fileContent.length()).toString()
+		}
+		else if(dataFile.fileType == 'excel'){
+			InputStream inputStream = dataFile.fileContent.getBinaryStream()
+			input = excelService.excelToCsv(inputStream)
+		}
+		else
+			input = null
+			
+		if(input){
+			dataFileMap.put('header',getRowMap(input,1))
+			dataFileMap.put('row',getRowMap(input,rowNum))
+		}
+		
+		return dataFileMap
+	}
+	
+	def getRowMap(String dataInput, int row){
+		def rowList = dataInput.split("\n")
+		def fieldMap = [:]
+		def fieldList = rowList[row].split(",")
+		for(int i=0;i<fieldList.size();i++){
+			fieldMap[i] = fieldList[i]
+		}
+		return fieldMap
+	}
+	
+	def getFieldsMap(String xml){
+		def fieldsMap = [:]
+		def parser = new XmlSlurper().parseText(xml)
+		def fields = parser.format.body.field
+		def addresses = parser.format.body.address
+		def attributes = parser.format.body.attribute
+
+		[fields,addresses,attributes].each{
+			if(it.field){
+				//Parent   Container of fields
+				fieldsMap += fieldExpander(it.@name.text(),it.@required.text(),it.field)
+			}
+			else{
+				//List of fields
+				fieldsMap += fieldExpander(null,null,it)
+			}
+		}
+		
+		return fieldsMap
+	}
+	
+	def fieldExpander = {parentName,parentRequired,fieldsList->
+		def fieldsMap = [:]
+		def name
+		def required
+		def location
+		def type
+		
+		fieldsList.each{
+			if(parentName){
+				name = "${parentName}/${it.@name.text()}"
+			}
+			else{
+				name = it.@name.text()
+			}
+			location = it.@location.text()
+			type = it.type.@name.text()
+			fieldsMap[name] = new Field(name:name,location:location,required:required,type:type)
+		}
+		return fieldsMap		
+	}
+
+    def index() {
+        redirect(action: "search", params: params)
+    }
+
+    def list(Integer max) {
+        params.max = Math.min(max ?: 10, 100)
+        [dataFileInstanceList: DataFile.list(params), dataFileInstanceTotal: DataFile.count()]
+    }
+
+    def create() {
+        [dataFileInstance: new DataFile(params)]
+    }
+
+    def save() {
+        def dataFileInstance = new DataFile(params)
+        if (!dataFileInstance.save(flush: true)) {
+            render(view: "create", model: [dataFileInstance: dataFileInstance])
+            return
+        }
+
+        flash.message = message(code: 'default.created.message', args: [message(code: 'dataFile.label', default: 'DataFile'), dataFileInstance.id])
+        redirect(action: "show", id: dataFileInstance.id)
+    }
+
+    def show(Long id) {
+        def dataFileInstance = DataFile.get(id)
+        if (!dataFileInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'dataFile.label', default: 'DataFile'), id])
+            redirect(action: "list")
+            return
+        }
+
+        [dataFileInstance: dataFileInstance]
+    }
+
+    def edit(Long id) {
+        def dataFileInstance = DataFile.get(id)
+        if (!dataFileInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'dataFile.label', default: 'DataFile'), id])
+            redirect(action: "list")
+            return
+        }
+
+        [dataFileInstance: dataFileInstance]
+    }
+
+    def update(Long id, Long version) {
+        def dataFileInstance = DataFile.get(id)
+        if (!dataFileInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'dataFile.label', default: 'DataFile'), id])
+            redirect(action: "list")
+            return
+        }
+
+        if (version != null) {
+            if (dataFileInstance.version > version) {
+                dataFileInstance.errors.rejectValue("version", "default.optimistic.locking.failure",
+                          [message(code: 'dataFile.label', default: 'DataFile')] as Object[],
+                          "Another user has updated this DataFile while you were editing")
+                render(view: "edit", model: [dataFileInstance: dataFileInstance])
+                return
+            }
+        }
+
+        dataFileInstance.properties = params
+
+        if (!dataFileInstance.save(flush: true)) {
+            render(view: "edit", model: [dataFileInstance: dataFileInstance])
+            return
+        }
+
+        flash.message = message(code: 'default.updated.message', args: [message(code: 'dataFile.label', default: 'DataFile'), dataFileInstance.id])
+        redirect(action: "show", id: dataFileInstance.id)
+    }
+
+    def delete(Long id) {
+        def dataFileInstance = DataFile.get(id)
+        if (!dataFileInstance) {
+            flash.message = message(code: 'default.not.found.message', args: [message(code: 'dataFile.label', default: 'DataFile'), id])
+            redirect(action: "list")
+            return
+        }
+
+        try {
+            dataFileInstance.delete(flush: true)
+            flash.message = message(code: 'default.deleted.message', args: [message(code: 'dataFile.label', default: 'DataFile'), id])
+            redirect(action: "list")
+        }
+        catch (DataIntegrityViolationException e) {
+            flash.message = message(code: 'default.not.deleted.message', args: [message(code: 'dataFile.label', default: 'DataFile'), id])
+            redirect(action: "show", id: id)
+        }
+    }
+}

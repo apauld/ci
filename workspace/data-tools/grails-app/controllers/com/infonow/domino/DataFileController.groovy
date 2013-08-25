@@ -1,11 +1,17 @@
 package com.infonow.domino
 
 import org.springframework.dao.DataIntegrityViolationException
+//import java.nio.channels.Channels
+//import java.nio.channels.ReadableByteChannel
+//import java.nio.channels.WritableByteChannel
+
 
 
 class DataFileController {
 
-    static allowedMethods = [save: "POST", update: "POST", delete: "POST"]
+    static allowedMethods = [save: "POST", update: "POST", delete: "POST", search:"GET"]
+	
+	def excelService
 	
 	def search() {
 
@@ -15,37 +21,123 @@ class DataFileController {
 				flash.message = "DataFile with id: ${params.id} not found."
 			}
 			else{
-				//get parseConfiguration for parserAttempt
-					//config service_name = ‘parserService’, customer_sid , reporting_partner_sid ,df.data_type = carp.name
-				//get baseConfiguration for baseParser
+				Configuration currentConfiguration = Configuration.find("from Configuration c where c.serviceName = 'parserService' and c.customerSid = :customerSid and c.reportingPartnerSid = :reportingPartnerSid and c.name = :name and c.configurationType = :fileType",[customerSid:dataFileInstance.customerSid,reportingPartnerSid:dataFileInstance.reportingPartnerSid,name:dataFileInstance.dataType, fileType:dataFileInstance.fileType])
+				ReportingPartner basePartner = ReportingPartner.findByIdOriginal("BASE")
+				Configuration baseConfiguration = Configuration.find("from Configuration c where c.serviceName = 'parserService' and c.customerSid = :customerSid and c.reportingPartnerSid = :reportingPartnerSid and c.name = :name",[customerSid:dataFileInstance.customerSid,reportingPartnerSid:basePartner.id,name:dataFileInstance.dataType])
 
-				if(!parseConfiguration){
-					flash.message = "Unable to locate configuration for ${dataFileInstance.customerSid}, ${dataFileInstance.reportingPartnerSid}, ${dataFileInstance.dataType}"
+				if(!currentConfiguration){
+					flash.message = "Unable to locate configuration for ${dataFileInstance.customerSid}, ${dataFileInstance.reportingPartnerSid}, ${dataFileInstance.dataType},${dataFileInstance.fileType}"
 				}
 				else{				
 					def parseFields = [:]
 					def baseFields = [:]
 					def fileData = [:]
-					parseFields = getFields(parseConfiguration.xmlData)
+					parseFields = getFieldsMap(currentConfiguration.xmlData)
 					if(baseConfiguration){
-						baseFields = getFields(baseConfiguration.xmlData)
+						baseFields = getFieldsMap(currentConfiguration.xmlData)
 					}
-					fileData = getFileData(dataFileInstance)
-					[parseFields:parseFields,baseFields:baseFields,fileDataHeader:fileData.row1,fileDataRow:fileData.row2]
+					fileData = getFileDataMap(dataFileInstance,2)
+					//[parseFields:parseFields,baseFields:baseFields,fileDataHeader:fileData.header,fileDataRow:fileData.row]
+					[tableList:buildTableList(parseFields,baseFields,fileData.header,fileData.row)]
 				}
 			}
 		}
 	}
 	
-	def getFileData(DataFile dataFile){
-		//TODO
-		//Excel or csv, get two rows, return in map of split fields map
-		[:]
+	def buildTableList = {parseFields,baseFields,fileDataHeader,fileDataRow->
+		def tableList = [];
+		
+		//location,dataHeader,dataRow,parserField,parserRequired,baseStatus
+		fileDataHeader.each{location,header->
+			def parserField = getFieldByLocation(parseFields,location)?.name
+			def parserRequired = getFieldByLocation(parseFields,location)?.required
+			def baseStatus = baseFields[parserField]?.required
+			
+			tableList << [location:location+1,dataHeader:header,dataField:fileDataRow[location],parserField:parserField,parserRequired:parserRequired,baseStatus:baseStatus]
+		}
+		
 	}
 	
-	def getFields(String xml){
-		//TODO return map of fields, addresses
-		[:]
+	def getFieldByLocation = {parseFields,location->
+		parseFields.each{name,field->
+			if(field.location == location)
+				return field;
+		}
+	}
+	
+	def getFileDataMap(DataFile dataFile, int rowNum){
+		def dataFileMap = null
+		def rowMap = [:]
+		String input
+		
+		if(dataFile.fileType == 'csv'){
+			input = dataFile.fileContent.getBytes(0,dataFile.fileContent.length()).toString()
+		}
+		else if(dataFile.fileType == 'excel'){
+			InputStream inputStream = dataFile.fileContent.getBinaryStream()
+			input = excelService.excelToCsv(inputStream)
+		}
+		else
+			input = null
+			
+		if(input){
+			dataFileMap.put('header',getRowMap(input,1))
+			dataFileMap.put('row',getRowMap(input,rowNum))
+		}
+		
+		return dataFileMap
+	}
+	
+	def getRowMap(String dataInput, int row){
+		def rowList = dataInput.split("\n")
+		def fieldMapByLocation = [:]
+		def fieldList = rowList[row].split(",")
+		for(int i=0;i<fieldList.size();i++){
+			fieldMapByLocation[i] = fieldList[i]
+		}
+		return fieldMapByLocation
+	}
+	
+	def getFieldsMap(String xml){
+		def fieldsMap = [:]
+		def parser = new XmlSlurper().parseText(xml)
+		def fields = parser.format.body.field
+		def addresses = parser.format.body.address
+		def attributes = parser.format.body.attribute
+
+		[fields,addresses,attributes].each{
+			if(it.field){
+				//Parent   Container of fields
+				fieldsMap += fieldExpander(it.@name.text(),it.@required.text(),it.field)
+			}
+			else{
+				//List of fields
+				fieldsMap += fieldExpander(null,null,it)
+			}
+		}
+		
+		return fieldsMap
+	}
+	
+	def fieldExpander = {parentName,parentRequired,fieldsList->
+		def fieldsMap = [:]
+		def name
+		def required
+		def location
+		def type
+		
+		fieldsList.each{
+			if(parentName){
+				name = "${parentName}/${it.@name.text()}"
+			}
+			else{
+				name = it.@name.text()
+			}
+			location = it.@location.text()
+			type = it.type.@name.text()
+			fieldsMap[name] = new Field(name:name,location:location,required:required,type:type)
+		}
+		return fieldsMap		
 	}
 
     def index() {

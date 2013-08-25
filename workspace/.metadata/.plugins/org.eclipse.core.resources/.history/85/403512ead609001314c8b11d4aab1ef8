@@ -1,0 +1,8 @@
+package com.infonow.domino
+
+class ExcelService {
+
+    def serviceMethod() {
+
+    }
+}
