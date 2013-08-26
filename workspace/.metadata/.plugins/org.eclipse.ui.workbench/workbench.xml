@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<workbench progressCount="75" version="2.0">
+<workbench progressCount="77" version="2.0">
 <workbenchAdvisor/>
 <window height="768" maximized="true" width="1024" x="130" y="102">
 <fastViewData fastViewLocation="1024">
@@ -46,8 +46,7 @@
 <view id="org.eclipse.jdt.junit.ResultView" partName="JUnit"/>
 <view id="org.eclipse.ui.views.AllMarkersView" partName="Markers">
 <viewState PRIMARY_SORT_FIELD="org.eclipse.ui.ide.allSeverityField" categoryGroup="org.eclipse.ui.ide.type" markerContentGenerator="org.eclipse.ui.ide.allMarkersGenerator" partName="Markers">
-<expanded>
-<category IMemento.internal.id="Java Problems (2 items)"/>
+<expanded>&#x0A;<category IMemento.internal.id="Java Problems (2 items)"/>
 </expanded>
 <columnWidths org.eclipse.ui.ide.allSeverityField="300" org.eclipse.ui.ide.locationField="90" org.eclipse.ui.ide.markerType="90" org.eclipse.ui.ide.pathField="248" org.eclipse.ui.ide.resourceField="168"/>
 <visible IMemento.internal.id="org.eclipse.ui.ide.allSeverityField"/>
@@ -256,6 +255,12 @@
 </trimLayout>
 </window>
 <mruList>
+<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.codehaus.groovy.eclipse.editor.GroovyEditor" name="DataFileController.groovy" tooltip="data-tools/grails-app/controllers/com/infonow/domino/DataFileController.groovy">
+<persistable path="/data-tools/grails-app/controllers/com/infonow/domino/DataFileController.groovy"/>
+</file>
+<file factoryID="org.springsource.ide.eclipse.dashboard.ui.dashboard.elementFactory" id="com.springsource.sts.internal.ide.ui.editors.MultiPageDashboardEditor" name="Dashboard" tooltip="Dashboard">
+<persistable openDashboard="true"/>
+</file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.codehaus.groovy.eclipse.editor.GroovyEditor" name="ExcelService.groovy" tooltip="data-tools/grails-app/services/com/infonow/domino/ExcelService.groovy">
 <persistable path="/data-tools/grails-app/services/com/infonow/domino/ExcelService.groovy"/>
 </file>
@@ -276,12 +281,6 @@
 </file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.codehaus.groovy.eclipse.editor.GroovyEditor" name="Address.groovy" tooltip="data-tools/grails-app/domain/com/infonow/domino/Address.groovy">
 <persistable path="/data-tools/grails-app/domain/com/infonow/domino/Address.groovy"/>
-</file>
-<file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.codehaus.groovy.eclipse.editor.GroovyEditor" name="DataFileController.groovy" tooltip="data-tools/grails-app/controllers/com/infonow/domino/DataFileController.groovy">
-<persistable path="/data-tools/grails-app/controllers/com/infonow/domino/DataFileController.groovy"/>
-</file>
-<file factoryID="org.springsource.ide.eclipse.dashboard.ui.dashboard.elementFactory" id="com.springsource.sts.internal.ide.ui.editors.MultiPageDashboardEditor" name="Dashboard" tooltip="Dashboard">
-<persistable openDashboard="true"/>
 </file>
 <file factoryID="org.eclipse.ui.part.FileEditorInputFactory" id="org.codehaus.groovy.eclipse.editor.GroovyEditor" name="ConfigurationAudit.groovy" tooltip="data-tools/grails-app/domain/com/infonow/domino/ConfigurationAudit.groovy">
 <persistable path="/data-tools/grails-app/domain/com/infonow/domino/ConfigurationAudit.groovy"/>
